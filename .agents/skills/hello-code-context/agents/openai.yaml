@@ -1,0 +1,3 @@
+interface:
+  display_name: "Hello Code Context"
+  short_description: "Preserve shared Hello Code domain rules"

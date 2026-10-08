@@ -1,5 +1,5 @@
 -- Hello Code 2026 - schema simples para rodar no SQL Editor do Supabase.
--- Depois de executar este arquivo, preencha url e anonKey nos dois HTMLs.
+-- Depois de executar este arquivo, preencha url e anonKey em supabase-config.js.
 -- Nao use a service_role key no navegador.
 
 create extension if not exists pgcrypto;
