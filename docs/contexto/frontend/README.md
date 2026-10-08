@@ -32,7 +32,7 @@ Textos de equipes e juradas retornados pelo banco são escapados por `esc()` na 
 
 Cada HTML intercepta apenas sua rota interna: `/api/evaluations` ou `/api/admin`. O adaptador chama as funções Supabase descritas no [contrato de backend](../backend/README.md). Outras requisições continuam usando o `fetch` nativo.
 
-Em HTTP/HTTPS, o adaptador é instalado mesmo quando falta a chave pública ou a biblioteca do CDN. Ele retorna erro `503` nesse caso e impede que os mocks substituam o banco. `HELLO_CODE_SUPABASE_READY` indica que o adaptador foi instalado, não que uma conexão foi comprovada.
+Em HTTP/HTTPS, o adaptador é instalado mesmo quando falta a chave pública ou a biblioteca do CDN. Ao chamar um RPC, ele tenta recuperar a configuração com uma URL sem cache e carregar a biblioteca caso esteja ausente. Falhas retornam erro `503` e permitem nova tentativa, sem ativar os mocks ou apagar as notas do formulário. A configuração inicial usa um parâmetro de versão para evitar a chave vazia de uma publicação anterior. `HELLO_CODE_SUPABASE_READY` indica que o adaptador foi instalado, não que uma conexão foi comprovada.
 
 Ao abrir por `file:` sem URL ou chave configurada, os mocks locais são ativados. As chaves existentes são:
 

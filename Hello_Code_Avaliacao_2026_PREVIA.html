@@ -123,22 +123,45 @@
   <div id="toast" class="toast hidden"></div>
 
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.117.3"></script>
-<script src="./supabase-config.js"></script>
+<script src="./supabase-config.js?v=20261007-2"></script>
 <script>
 // Quando configurado, adapta as chamadas /api/... existentes para RPCs do Supabase.
 (function(){
   const config = window.HELLO_CODE_SUPABASE_CONFIG || {};
   if(location.protocol === 'file:' && (!config.url || !config.anonKey)) return;
-  const client = config.url && config.anonKey && window.supabase
-    ? window.supabase.createClient(config.url, config.anonKey) : null;
+  let connecting;
+  const loadScript = src => new Promise((resolve, reject) => {
+    const script = document.createElement('script');
+    script.src = src;
+    script.onload = resolve;
+    script.onerror = () => { script.remove(); reject(new Error('Não foi possível carregar a conexão. Verifique sua internet e tente novamente.')); };
+    document.head.appendChild(script);
+  });
+  const getClient = () => {
+    if(!connecting) connecting = (async () => {
+      let current = window.HELLO_CODE_SUPABASE_CONFIG || {};
+      if(!current.url || !current.anonKey){
+        await loadScript(new URL('./supabase-config.js?reload=' + Date.now(), location.href).href);
+        current = window.HELLO_CODE_SUPABASE_CONFIG || {};
+      }
+      if(!window.supabase) await loadScript('https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.117.3');
+      if(!current.url || !current.anonKey) throw new Error('A configuração do banco não carregou. Abra novamente o link do evento.');
+      return window.supabase.createClient(current.url, current.anonKey);
+    })().catch(error => { connecting = null; throw error; });
+    return connecting;
+  };
   window.HELLO_CODE_SUPABASE_READY = true;
   const nativeFetch = window.fetch.bind(window);
   const json = (payload, status = 200) => new Response(JSON.stringify(payload), {status, headers:{'content-type':'application/json'}});
   const rpc = async (fn, args) => {
-    if(!client) return json({error:'Não foi possível conectar ao banco de dados. Tente novamente mais tarde.'}, 503);
-    const {data, error} = await client.rpc(fn, args);
-    if(error) return json({error:error.message || 'Falha ao acessar o Supabase'}, 400);
-    return json(data || {});
+    try {
+      const client = await getClient();
+      const {data, error} = await client.rpc(fn, args);
+      if(error) return json({error:error.message || 'Falha ao acessar o Supabase'}, 400);
+      return json(data || {});
+    } catch(error) {
+      return json({error:error.message || 'Falha de conexão. Tente enviar novamente.'}, 503);
+    }
   };
   window.fetch = async function(input, init = {}){
     const url = typeof input === 'string' ? input : (input && input.url) || '';
